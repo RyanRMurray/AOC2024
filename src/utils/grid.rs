@@ -1,5 +1,9 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fmt::Debug;
+use std::vec::IntoIter;
+
+use indexmap::IndexMap;
+use itertools::Itertools;
 
 use super::point::Pt;
 
@@ -7,11 +11,11 @@ use super::point::Pt;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Grid<T: Copy, const DIMS: usize> {
     /// neighbour offsets for points in this N dimensions
-    offsets: HashSet<Pt<DIMS>>,
+    pub offsets: HashSet<Pt<DIMS>>,
     /// cardinal offsets for points in this N dimensions
     pub card_offsets: HashSet<Pt<DIMS>>,
     default_val: T,
-    pub grid: HashMap<Pt<DIMS>, T>,
+    pub grid: IndexMap<Pt<DIMS>, T>,
 }
 
 impl<T: Default + Copy, const DIMS: usize> Default for Grid<T, DIMS> {
@@ -72,7 +76,7 @@ impl<T: Copy, const DIMS: usize> Grid<T, DIMS> {
 
     /// apply a transformation to every point in a grid
     pub fn transform(mut self, transformation: fn(Pt<DIMS>) -> Pt<DIMS>) -> Self {
-        let mut new_grid = HashMap::default();
+        let mut new_grid = IndexMap::default();
         self.grid.into_iter().for_each(|(k, v)| {
             new_grid.insert(transformation(k), v);
         });
@@ -92,6 +96,16 @@ impl<T: Copy, const DIMS: usize> Grid<T, DIMS> {
             }
         }
         (mins, maxs)
+    }
+
+    pub fn iter_linear(&self) -> IntoIter<&Pt<DIMS>> {
+        self.grid.keys().sorted_by(|a, b| {
+            (1..DIMS + 1)
+                .rev()
+                .map(|d| a.0[d - 1].cmp(&b.0[d - 1]))
+                .find_or_last(|o| o.is_ne())
+                .unwrap()
+        })
     }
 }
 
@@ -175,6 +189,22 @@ mod tests {
         ]);
 
         let result = grid.print(|x| char::from_digit(x, 10).unwrap());
+
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn test_linear_iter() {
+        let expected = vec![&Pt([0, 0]), &Pt([1, 0]), &Pt([0, 1]), &Pt([1, 1])];
+
+        let grid = Grid::<bool, 2>::from(vec![
+            (Pt([1, 0]), true),
+            (Pt([0, 0]), true),
+            (Pt([0, 1]), true),
+            (Pt([1, 1]), true),
+        ]);
+
+        let result: Vec<_> = grid.iter_linear().collect();
 
         assert_eq!(expected, result);
     }

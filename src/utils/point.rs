@@ -5,7 +5,7 @@ use std::{
 
 use itertools::Itertools;
 
-#[derive(Hash, PartialEq, Eq, PartialOrd, Debug, Clone, Copy)]
+#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
 pub struct Pt<const DIMS: usize>(pub [isize; DIMS]);
 
 impl<const DIMS: usize> Default for Pt<DIMS> {
@@ -213,5 +213,24 @@ mod tests {
     #[case(Pt([-100,-200,-300]), Pt([1,2,3]), -100)]
     fn validate_mul(#[case] expected: Pt<3>, #[case] a: Pt<3>, #[case] b: isize) {
         assert_eq!(expected, a * b)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub enum D {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+impl D {
+    pub fn val(&self) -> Pt<2> {
+        match self {
+            D::Up => Pt([0, -1]),
+            D::Down => Pt([0, 1]),
+            D::Left => Pt([-1, 0]),
+            D::Right => Pt([1, 0]),
+        }
     }
 }
