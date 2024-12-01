@@ -12,7 +12,7 @@ You can run this project by calling
 
 ```bash
 cargo +nightly build
-./target/debug/AOC2023.exe -d [day number]  -i [input file path]
+./target/debug/AOC2024.exe -d [day number]  -i [input file path]
 ```
 
 or
@@ -21,7 +21,7 @@ or
 cargo +nightly run -- -d [day number] -i [input file path]
 ```
 
-To create a new solution file for a particular day, run `./start_day [day number]`
+To create a new solution file for a particular day, run `./start_day -d [day number]`
 
 By default, `./inputs/input_{day}.txt` will be used as the input file path. For example, day 01 will use `./inputs/input_01.txt`
 
