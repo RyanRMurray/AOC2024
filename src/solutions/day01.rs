@@ -31,13 +31,11 @@ impl SolutionLinear<(Vec<usize>, Vec<usize>), usize, usize> for Day01Solution {
 
     fn part2((l, r): &mut (Vec<usize>, Vec<usize>), _part_1_solution: usize) -> Result<usize> {
         let mut occurrences = HashMap::new();
-        for x in r{
-            occurrences.entry(x).and_modify(|v| {*v += 1}).or_insert(1);
+        for x in r {
+            occurrences.entry(x).and_modify(|v| *v += 1).or_insert(1);
         }
 
-        Ok(
-            l.iter().map(|k| { k * occurrences.get(k).unwrap_or(&0)}).sum()
-        )
+        Ok(l.iter().map(|k| k * occurrences.get(k).unwrap_or(&0)).sum())
     }
 }
 
