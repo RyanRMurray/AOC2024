@@ -37,6 +37,7 @@ if __name__ == "__main__":
         mod_template = f.read()
     
     files = [Path(f).stem for f in glob.glob("./src/solutions/day*.rs")]
+    files.reverse()
     mods = "\n".join([f"mod {f};" for f in files])
     sols = "\n".join([f"\t{f}::{f}," for f in files])
     
