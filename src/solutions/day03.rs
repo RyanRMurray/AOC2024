@@ -1,5 +1,3 @@
-use std::{collections::HashSet, path::Iter};
-
 use crate::utils::solver_types::{solve_linear, SolutionLinear};
 use anyhow::Result;
 use itertools::Itertools;

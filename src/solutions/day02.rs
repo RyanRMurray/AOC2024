@@ -1,5 +1,5 @@
 use crate::utils::{
-    load_input::{load_lines, load_segmented_lines},
+    load_input::load_lines,
     solver_types::{solve_linear, SolutionLinear},
 };
 use anyhow::Result;
