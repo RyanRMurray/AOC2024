@@ -11,7 +11,7 @@ pub fn day02(input: &str) -> Result<f32> {
     solve_linear::<Day02Solution, _, _, _>(input)
 }
 
-fn is_safe(line: &Vec<usize>) -> bool {
+fn is_safe(line: &[usize]) -> bool {
     let increasing = &line[0].gt(&line[1]);
 
     line.iter().tuple_windows().all(|(a, b)| {
@@ -24,16 +24,16 @@ fn is_safe(line: &Vec<usize>) -> bool {
     })
 }
 
-fn cooler_is_safe(line: &Vec<usize>) -> bool {
+fn cooler_is_safe(line: &[usize]) -> bool {
     // lazy :)
-    let mut muts = vec![line.clone()];
+    let mut muts = vec![line.to_owned()];
     for i in 0..line.len() {
-        let mut cl = line.clone();
+        let mut cl = line.to_owned();
         cl.remove(i);
         muts.push(cl);
     }
 
-    muts.iter().any(|l| is_safe(l))
+    muts.iter().any(|v| is_safe(v))
 }
 
 impl SolutionLinear<Vec<Vec<usize>>, usize, usize> for Day02Solution {

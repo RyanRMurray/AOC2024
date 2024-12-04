@@ -35,7 +35,7 @@ impl SolutionLinear<String, usize, usize> for Day03Solution {
 
     fn part1(input: &mut String) -> Result<usize> {
         Ok(find_matches(input, &MUL_RE)
-            .map(|(mul, _)| process_mul(&mul))
+            .map(|(mul, _)| process_mul(mul))
             .sum())
     }
 
@@ -70,7 +70,7 @@ impl SolutionLinear<String, usize, usize> for Day03Solution {
             .filter_map(
                 |(mul, ix)| match ranges.iter().any(|(a, b)| ix < b && ix > a) {
                     false => None,
-                    true => Some(process_mul(&mul)),
+                    true => Some(process_mul(mul)),
                 },
             )
             .sum())
