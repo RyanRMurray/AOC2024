@@ -17,17 +17,13 @@ pub fn day03(input: &str) -> Result<f32> {
 }
 
 fn find_matches<'a>(input: &'a str, re: &'a Regex) -> impl Iterator<Item = (&'a str, usize)> + 'a {
-    re.captures_iter(input)
-    .map(|c|{
+    re.captures_iter(input).map(|c| {
         let cap = c.get(0).unwrap();
-        (
-            cap.as_str(),
-            cap.start()
-        )
+        (cap.as_str(), cap.start())
     })
 }
 
-fn process_mul(input: &str) -> usize{
+fn process_mul(input: &str) -> usize {
     let (a, b) = input[4..input.len() - 1].split_once(',').unwrap();
     a.parse::<usize>().unwrap() * b.parse::<usize>().unwrap()
 }
@@ -39,40 +35,46 @@ impl SolutionLinear<String, usize, usize> for Day03Solution {
 
     fn part1(input: &mut String) -> Result<usize> {
         Ok(find_matches(input, &MUL_RE)
-            .map(|(mul,_)| process_mul(&mul))
+            .map(|(mul, _)| process_mul(&mul))
             .sum())
     }
 
     fn part2(input: &mut String, _part_1_solution: usize) -> Result<usize> {
         // find locations for every mul, do, and dont. (assume a pre-string do and a post-string dont)
         let muls = find_matches(input, &MUL_RE).collect_vec();
-        let mut dos = (0..1).chain(find_matches(input, &DO_RE).map(|(_,ix)| ix)).peekable();
-        let mut donts = find_matches(input, &DONT_RE).map(|(_,ix)| ix).chain(input.len()..input.len()+1).peekable();
+        let mut dos = (0..1)
+            .chain(find_matches(input, &DO_RE).map(|(_, ix)| ix))
+            .peekable();
+        let mut donts = find_matches(input, &DONT_RE)
+            .map(|(_, ix)| ix)
+            .chain(input.len()..input.len() + 1)
+            .peekable();
 
         // create ranges of 'do' indexes by iterating over every do and matching them with a following dont
         let mut ranges = vec![];
         let mut opt_a = dos.next();
         let mut b = donts.next().unwrap();
-        
-        while let Some(a) = opt_a{
-            if a < b{
-                ranges.push((a,b));
+
+        while let Some(a) = opt_a {
+            if a < b {
+                ranges.push((a, b));
                 opt_a = dos.next();
-            } else{
+            } else {
                 b = donts.next().unwrap();
             }
-    
-        } 
+        }
 
         // process a mul if their index is a 'do' index
-        Ok(
-            muls.iter().filter_map(|(mul,ix)|{
-                match ranges.iter().any(|(a,b)| ix < b && ix > a){
+        Ok(muls
+            .iter()
+            .filter_map(
+                |(mul, ix)| match ranges.iter().any(|(a, b)| ix < b && ix > a) {
                     false => None,
                     true => Some(process_mul(&mul)),
-                }
-            }).sum()
-        )    }
+                },
+            )
+            .sum())
+    }
 }
 
 #[cfg(test)]
@@ -88,7 +90,12 @@ mod tests {
         161,
         48
     )]
-    fn validate_day03(#[case] input1: &str, #[case] input2: &str, #[case] expected_1: usize, #[case] expected_2: usize) {
+    fn validate_day03(
+        #[case] input1: &str,
+        #[case] input2: &str,
+        #[case] expected_1: usize,
+        #[case] expected_2: usize,
+    ) {
         let mut input1 = Day03Solution::load(input1).unwrap();
         let mut input2 = Day03Solution::load(input2).unwrap();
 
