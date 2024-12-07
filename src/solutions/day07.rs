@@ -30,21 +30,18 @@ fn validate(
     op: &dyn Fn(usize, usize) -> usize,
 ) -> bool {
     let res = op(sum, input.1[idx]);
-    match (res.cmp(&input.0), idx == input.1.len() - 1) {
+    let end_reached = idx == input.1.len() - 1;
+    match (res.cmp(&input.0), end_reached) {
         // over-shot goal
         (Ordering::Greater, _) => false,
         // all numbers consumed, goal reached
         (Ordering::Equal, true) => true,
+        // all numbers consumed, under goal
+        (Ordering::Less, true) => false,
         // numbers remaining
-        _ => {
-            if idx == input.1.len() - 1 {
-                false
-            } else {
-                allowed_ops
-                    .iter()
-                    .any(|next_op| validate(input, allowed_ops, res, idx + 1, next_op))
-            }
-        }
+        _ => allowed_ops
+            .iter()
+            .any(|next_op| validate(input, allowed_ops, res, idx + 1, next_op)),
     }
 }
 
