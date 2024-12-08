@@ -1,11 +1,6 @@
-use std::{
-    collections::{HashMap, HashSet},
-    ops::Div,
-};
+use std::{collections::HashMap, ops::Mul};
 
 use crate::utils::{
-    grid::Grid,
-    load_input::load_2d_grid,
     point::Pt,
     solver_types::{solve_linear, SolutionLinear},
 };
@@ -24,15 +19,40 @@ struct G {
     locs: HashMap<char, Vec<Pt<2>>>,
 }
 
-fn project(Pt([ax, ay]): &Pt<2>, Pt([bx, by]): &Pt<2>) -> Pt<2> {
-    Pt([bx + bx - ax, by + by - ay])
+/// create an iterator that yields each pt on the grid aligned on the a->b line. stop when we go beyond the grid bounds
+fn project<'a>(
+    max_x: &'a isize,
+    max_y: &'a isize,
+    mags: impl Iterator<Item = isize> + 'a,
+    a: &'a Pt<2>,
+    b: &'a Pt<2>,
+) -> impl Iterator<Item = Pt<2>> + 'a {
+    mags.map(move |m| {
+        let dist = b - a;
+        *b + (dist.mul(m))
+    })
+    .take_while(|Pt([x, y])| x >= &0 && x <= max_x && y >= &0 && y <= max_y)
 }
 
-fn antinodes_for<'a>(locs: &'a [Pt<2>]) -> impl Iterator<Item = Pt<2>> + 'a {
+fn antinodes_for<'a>(
+    max_x: &'a isize,
+    max_y: &'a isize,
+    range1: isize,
+    range2: isize,
+    locs: &'a [Pt<2>],
+) -> impl Iterator<Item = Pt<2>> + 'a {
     locs.iter()
         .cartesian_product(locs.iter())
         .filter(|(a, b)| a != b)
-        .flat_map(|(a, b)| vec![project(a, b), project(b, a)])
+        .flat_map(move |(a, b)| {
+            project(max_x, max_y, range1..=range2, a, b).chain(project(
+                max_x,
+                max_y,
+                range1..=range2,
+                b,
+                a,
+            ))
+        })
 }
 
 impl SolutionLinear<G, usize, usize> for Day08Solution {
@@ -61,14 +81,18 @@ impl SolutionLinear<G, usize, usize> for Day08Solution {
         Ok(input
             .locs
             .values()
-            .flat_map(|v| antinodes_for(v))
-            .filter(|Pt([a, b])| a >= &0 && a <= &input.x && b >= &0 && b <= &input.y)
+            .flat_map(|v| antinodes_for(&input.x, &input.y, 1, 1, v))
             .unique()
             .count())
     }
 
     fn part2(input: &mut G, _part_1_solution: usize) -> Result<usize> {
-        todo!()
+        Ok(input
+            .locs
+            .values()
+            .flat_map(|v| antinodes_for(&input.x, &input.y, 0, 100, v))
+            .unique()
+            .count())
     }
 }
 
