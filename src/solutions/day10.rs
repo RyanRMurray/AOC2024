@@ -49,14 +49,14 @@ impl SolutionLinear<Map, usize, usize> for Day10Solution {
     }
 
     fn part1(input: &mut Map) -> Result<usize> {
-        Ok(find(&input, &0)
+        Ok(find(input, &0)
             .iter()
             .map(|at| resolve_trail(input, vec![at]).iter().unique().count())
             .sum())
     }
 
     fn part2(input: &mut Map, _part_1_solution: usize) -> Result<usize> {
-        Ok(find(&input, &0)
+        Ok(find(input, &0)
             .iter()
             .map(|at| resolve_trail(input, vec![at]).len())
             .sum())
