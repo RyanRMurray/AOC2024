@@ -30,7 +30,7 @@ fn to_plots(input: &Grid<char, 2>) -> Vec<HashSet<Pt<2>>> {
         let v = input.grid.get(&frontier[0]).unwrap();
         let mut new_plot = HashSet::new();
 
-        while let Some(p) = frontier.pop()  {
+        while let Some(p) = frontier.pop() {
             new_plot.insert(p);
             let _ = OFFS
                 .iter()
