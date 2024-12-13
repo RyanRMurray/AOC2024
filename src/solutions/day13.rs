@@ -17,7 +17,7 @@ struct Machine {
 /// solving linear equations, we reorganise:
 /// - Ax_1+Bx_2 = P_x
 /// - Ay_1+By_2 = P_y
-/// 
+///
 /// to get:
 /// B = (P_y*x_1-P_x*y_1)/(y_2*x_2-x_2*y_1)
 /// A = (P_x-B*x_2)/(x_1)
