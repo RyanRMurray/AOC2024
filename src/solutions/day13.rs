@@ -70,7 +70,7 @@ impl SolutionLinear<Vec<Machine>, usize, usize> for Day13Solution {
 
     fn part2(input: &mut Vec<Machine>, _part_1_solution: usize) -> Result<usize> {
         Ok(input
-            .into_iter()
+            .iter_mut()
             .map(|m| {
                 m.prize = [
                     m.prize[0] + 10_000_000_000_000,
