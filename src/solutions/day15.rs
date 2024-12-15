@@ -60,6 +60,7 @@ fn move_possible(maze: &Grid<Obj, 2>, bot_pos: &Pt<2>, dir: &Pt<2>) -> Option<Ve
     }
 }
 
+/// recursively find what is moved and whether it can be moved. Return `None` if any sub-object cannot be moved (that is, they'd collide with a wall)
 fn wide_move_possible(maze: &Grid<Obj, 2>, bot_pos: &Pt<2>, dir: &Pt<2>) -> Option<Vec<Pt<2>>> {
     let horizontal = dir.0[0] != 0;
     match (horizontal, maze.get_def(&(bot_pos + dir))) {
