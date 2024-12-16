@@ -153,10 +153,6 @@ impl SolutionSimultaneous<State, usize, usize> for Day16Solution {
         }
         let edges = to_edges(pts);
 
-        // for x in edges{
-        //     println!("{:?}\t{:?}", x.0, x.1);
-        // }
-
         Ok(State { start, end, edges })
     }
 
@@ -196,7 +192,7 @@ mod tests {
 #S..#.....#...#
 ###############",
         7036,
-        2
+        45
     )]
     fn validate_day16(#[case] input: &str, #[case] expected_1: usize, #[case] expected_2: usize) {
         let input = Day16Solution::load(input).unwrap();
