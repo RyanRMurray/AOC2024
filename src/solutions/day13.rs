@@ -67,12 +67,12 @@ impl SolutionLinear<Vec<Machine>, usize, usize> for Day13Solution {
     fn part1(input: &mut Vec<Machine>) -> Result<usize> {
         Ok(input.iter().filter_map(|m| solve_machine(m, true)).sum())
     }
-    
+
     fn part2(input: &mut Vec<Machine>, _part_1_solution: usize) -> Result<usize> {
         #[allow(clippy::manual_inspect)] // resolving this causes a bug.
         Ok(input
             .iter_mut()
-            .map(|m| { 
+            .map(|m| {
                 m.prize = [
                     m.prize[0] + 10_000_000_000_000,
                     m.prize[1] + 10_000_000_000_000,
