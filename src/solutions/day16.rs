@@ -1,11 +1,12 @@
 use std::{
     collections::{HashMap, HashSet},
     ops::Mul,
+    usize,
 };
 
 use crate::utils::{
     point::Pt,
-    solver_types::{solve_linear, SolutionLinear},
+    solver_types::{solve_simultaneous, SolutionSimultaneous},
 };
 use anyhow::Result;
 use itertools::Itertools;
@@ -13,7 +14,7 @@ use itertools::Itertools;
 pub struct Day16Solution {}
 
 pub fn day16(input: &str) -> Result<f32> {
-    solve_linear::<Day16Solution, _, _, _>(input)
+    solve_simultaneous::<Day16Solution, _, _, _>(input)
 }
 
 /// E S W N
@@ -75,7 +76,7 @@ fn next_nodes(
     pt: &Pt<2>,
     bearing: usize,
     edges: &Edges,
-    distances: &HashMap<Pt<2>, usize>,
+    distances: &HashMap<(Pt<2>, usize), usize>,
     score: usize,
 ) -> Vec<(usize, usize, Vec<Pt<2>>)> {
     edges
@@ -86,7 +87,7 @@ fn next_nodes(
         .filter_map(|(i, n)| {
             if n.is_none() {
                 None
-            } else if distances.contains_key(n.clone().unwrap().last().unwrap()) {
+            } else if distances.contains_key(&(*n.clone().unwrap().last().unwrap(), i)) {
                 None
             } else {
                 let steps = n.clone().unwrap().clone();
@@ -102,10 +103,10 @@ fn next_nodes(
 }
 
 /// get the min distance of all nodes
-fn distances(start: &Pt<2>, edges: &Edges) -> HashMap<Pt<2>, usize> {
+fn distances(start: &Pt<2>, edges: &Edges) -> HashMap<(Pt<2>, usize), usize> {
     // min dist of all nodes
     let mut distances = HashMap::new();
-    distances.insert(*start, 0);
+    distances.insert((*start, 0), 0);
 
     let mut frontier = next_nodes(start, 0, edges, &distances, 0);
 
@@ -114,11 +115,11 @@ fn distances(start: &Pt<2>, edges: &Edges) -> HashMap<Pt<2>, usize> {
         let (cost, bearing, next) = frontier.pop().unwrap();
         let steps = next.clone();
 
-        if distances.contains_key(&steps.last().unwrap()) {
+        if distances.contains_key(&(*steps.last().unwrap(), bearing)) {
             continue;
         }
 
-        distances.insert(*steps.last().unwrap(), cost);
+        distances.insert((*steps.last().unwrap(), bearing), cost);
 
         frontier.extend(next_nodes(
             steps.last().unwrap(),
@@ -132,7 +133,7 @@ fn distances(start: &Pt<2>, edges: &Edges) -> HashMap<Pt<2>, usize> {
     return distances;
 }
 
-impl SolutionLinear<State, usize, usize> for Day16Solution {
+impl SolutionSimultaneous<State, usize, usize> for Day16Solution {
     fn load(input: &str) -> Result<State> {
         let mut start = Pt([-1, -1]);
         let mut end = Pt([-1, -1]);
@@ -159,25 +160,22 @@ impl SolutionLinear<State, usize, usize> for Day16Solution {
         Ok(State { start, end, edges })
     }
 
-    fn part1(input: &mut State) -> Result<usize> {
+    fn solve(input: State) -> Result<(usize, usize)> {
         let d = distances(&input.start, &input.edges);
-        println!("{:?}", input.start);
-        println!("{:?}: {:?}", Pt([139, 1]), d.get(&Pt([139, 17])));
-        // for x in d{
-        //     println!("{:?}:\t{}", x.0,x.1);
-        // }
-        Ok(*d.get(&input.end).unwrap())
-    }
-
-    fn part2(_input: &mut State, _part_1_solution: usize) -> Result<usize> {
-        todo!()
+        let mut p1 = usize::MAX;
+        for i in 0..4 {
+            if let Some(v) = d.get(&(input.end, i)) {
+                p1 = p1.min(*v);
+            }
+        }
+        Ok((p1, 0))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Day16Solution;
-    use crate::utils::solver_types::SolutionLinear;
+    use crate::utils::solver_types::SolutionSimultaneous;
     use rstest::rstest;
 
     #[rstest]
@@ -201,12 +199,10 @@ mod tests {
         2
     )]
     fn validate_day16(#[case] input: &str, #[case] expected_1: usize, #[case] expected_2: usize) {
-        let mut input = Day16Solution::load(input).unwrap();
+        let input = Day16Solution::load(input).unwrap();
 
-        let p1 = Day16Solution::part1(&mut input).unwrap();
+        let (p1, p2) = Day16Solution::solve(input).unwrap();
         assert_eq!(expected_1, p1);
-
-        let p2 = Day16Solution::part2(&mut input, p1).unwrap();
         assert_eq!(expected_2, p2);
     }
 }
