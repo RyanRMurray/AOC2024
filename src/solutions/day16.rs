@@ -1,16 +1,16 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::utils::{
     grid::Grid,
     point::Pt,
-    solver_types::{solve_linear, SolutionLinear},
+    solver_types::{solve_simultaneous, SolutionSimultaneous},
 };
 use anyhow::Result;
 use itertools::Itertools;
 pub struct Day16Solution {}
 
 pub fn day16(input: &str) -> Result<f32> {
-    solve_linear::<Day16Solution, _, _, _>(input)
+    solve_simultaneous::<Day16Solution, _, _, _>(input)
 }
 
 type Reindeer = (Pt<2>, Pt<2>);
@@ -42,16 +42,16 @@ fn ns<'a>(
 }
 
 fn find_lowest(rd: &Reindeer, goal: &Pt<2>, g: &HashSet<Pt<2>>) -> (Vec<Vec<Pt<2>>>, usize) {
-    let mut target = None;
+    let mut target = Some(100_000);
     let mut shortests = vec![];
     let mut frontier = ns(&vec![rd.0], 0, &Pt([1, 0]), g).collect_vec();
 
     while !frontier.is_empty() {
-        //println!("{:?}", frontier);
         frontier.sort_by(|(_, _, a), (_, _, b)| b.cmp(a));
         let (path, next_heading, next_score) = frontier.pop().unwrap();
         let next_at = path.last().unwrap();
 
+        println!("{:?}\t{}\t{:?}", frontier.len(), next_score, target);
         if target.is_some() && next_score > target.unwrap() {
             continue;
         }
@@ -76,7 +76,7 @@ fn find_lowest(rd: &Reindeer, goal: &Pt<2>, g: &HashSet<Pt<2>>) -> (Vec<Vec<Pt<2
     (shortests, target.unwrap())
 }
 
-impl SolutionLinear<(Reindeer, Pt<2>, HashSet<Pt<2>>), usize, usize> for Day16Solution {
+impl SolutionSimultaneous<(Reindeer, Pt<2>, HashSet<Pt<2>>), usize, usize> for Day16Solution {
     fn load(input: &str) -> Result<(Reindeer, Pt<2>, HashSet<Pt<2>>)> {
         let mut rd = (Pt([-1, -1]), Pt([1, 0]));
         let mut goal = Pt([-1, -1]);
@@ -99,22 +99,21 @@ impl SolutionLinear<(Reindeer, Pt<2>, HashSet<Pt<2>>), usize, usize> for Day16So
         Ok((rd, goal, g))
     }
 
-    fn part1((rd, goal, g): &mut (Reindeer, Pt<2>, HashSet<Pt<2>>)) -> Result<usize> {
-        Ok(find_lowest(rd, goal, g).1)
+    fn solve((rd, goal, g): (Reindeer, Pt<2>, HashSet<Pt<2>>)) -> Result<(usize,usize)> {
+        let (paths, min) = find_lowest(&rd, &goal, &g);
+
+        Ok(
+            (min,
+            paths.iter().flatten().unique().count())
+        )
     }
 
-    fn part2(
-        _input: &mut (Reindeer, Pt<2>, HashSet<Pt<2>>),
-        _part_1_solution: usize,
-    ) -> Result<usize> {
-        todo!()
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Day16Solution;
-    use crate::utils::solver_types::SolutionLinear;
+    use crate::utils::solver_types::SolutionSimultaneous;
     use rstest::rstest;
 
     #[rstest]
@@ -135,15 +134,13 @@ mod tests {
 #S..#.....#...#
 ###############",
         7036,
-        2
+        45
     )]
     fn validate_day16(#[case] input: &str, #[case] expected_1: usize, #[case] expected_2: usize) {
-        let mut input = Day16Solution::load(input).unwrap();
+        let input = Day16Solution::load(input).unwrap();
 
-        let p1 = Day16Solution::part1(&mut input).unwrap();
+        let (p1,p2) = Day16Solution::solve(input).unwrap();
         assert_eq!(expected_1, p1);
-
-        let p2 = Day16Solution::part2(&mut input, p1).unwrap();
         assert_eq!(expected_2, p2);
     }
 }
