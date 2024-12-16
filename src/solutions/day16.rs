@@ -33,17 +33,22 @@ struct State {
 fn to_edges(g: HashSet<Pt<2>>) -> Edges {
     let mut edges = HashMap::new();
 
-    let pts = g.iter().filter(|p| {
-        // find if step is a node
-        let mut ns = [false; 4];
-        for i in 0..4 {
-            ns[i] = g.contains(&(**p + OFFS[i]));
-        }
-        if ns.iter().all(|v|*v){
-            return true;
-        }
-        ns[0] != ns[2] || ns[1] != ns[3]
-    }).collect_vec();
+    let pts = g
+        .iter()
+        .filter(|p| {
+            // find if step is a node
+            let mut ns = [false; 4];
+            for i in 0..4 {
+                ns[i] = g.contains(&(**p + OFFS[i]));
+            }
+
+            if ns.iter().all(|v| *v) {
+                return true;
+            }
+
+            ns[0] != ns[2] || ns[1] != ns[3]
+        })
+        .collect_vec();
 
     for p in pts.iter() {
         let mut paths = [None, None, None, None];
@@ -54,15 +59,15 @@ fn to_edges(g: HashSet<Pt<2>>) -> Edges {
                 .collect_vec();
 
             if !path.is_empty() {
-                path.push(path.last().unwrap()+&OFFS[i]);
+                path.push(path.last().unwrap() + &OFFS[i]);
                 paths[i] = Some(path);
-            } else if g.contains(&&(**p+OFFS[i])){
-                paths[i] = Some(vec![**p+OFFS[i]])
+            } else if g.contains(&&(**p + OFFS[i])) {
+                paths[i] = Some(vec![**p + OFFS[i]])
             }
         }
         edges.insert(**p, paths);
     }
-    println!("{:?}", edges.get(&Pt([1,139])));
+    println!("{:?}", edges.get(&Pt([1, 139])));
     edges
 }
 
@@ -105,7 +110,7 @@ fn distances(start: &Pt<2>, edges: &Edges) -> HashMap<Pt<2>, usize> {
     let mut frontier = next_nodes(start, 0, edges, &distances, 0);
 
     while !frontier.is_empty() {
-        frontier.sort_by(|(a,_, _), (b,_, _)| b.cmp(a));
+        frontier.sort_by(|(a, _, _), (b, _, _)| b.cmp(a));
         let (cost, bearing, next) = frontier.pop().unwrap();
         let steps = next.clone();
 
@@ -115,10 +120,16 @@ fn distances(start: &Pt<2>, edges: &Edges) -> HashMap<Pt<2>, usize> {
 
         distances.insert(*steps.last().unwrap(), cost);
 
-        frontier.extend(next_nodes(steps.last().unwrap(), bearing, edges, &distances, cost));
+        frontier.extend(next_nodes(
+            steps.last().unwrap(),
+            bearing,
+            edges,
+            &distances,
+            cost,
+        ));
     }
 
-    return distances
+    return distances;
 }
 
 impl SolutionLinear<State, usize, usize> for Day16Solution {
@@ -151,7 +162,7 @@ impl SolutionLinear<State, usize, usize> for Day16Solution {
     fn part1(input: &mut State) -> Result<usize> {
         let d = distances(&input.start, &input.edges);
         println!("{:?}", input.start);
-        println!("{:?}: {:?}", Pt([139,1]), d.get(&Pt([139,17])));
+        println!("{:?}: {:?}", Pt([139, 1]), d.get(&Pt([139, 17])));
         // for x in d{
         //     println!("{:?}:\t{}", x.0,x.1);
         // }
