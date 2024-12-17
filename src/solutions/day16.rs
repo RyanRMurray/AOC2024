@@ -1,7 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
     ops::Mul,
-    usize,
 };
 
 use crate::utils::{
@@ -62,7 +61,7 @@ fn to_edges(g: HashSet<Pt<2>>) -> Edges {
             if !path.is_empty() {
                 path.push(path.last().unwrap() + &OFFS[i]);
                 paths[i] = Some(path);
-            } else if g.contains(&&(**p + OFFS[i])) {
+            } else if g.contains(&(**p + OFFS[i])) {
                 paths[i] = Some(vec![**p + OFFS[i]])
             }
         }
@@ -76,7 +75,7 @@ fn next_nodes(
     pt: &Pt<2>,
     bearing: usize,
     edges: &Edges,
-    distances: &HashMap<(Pt<2>, usize), usize>,
+    distances: Option<&HashMap<(Pt<2>, usize), usize>>,
     score: usize,
 ) -> Vec<(usize, usize, Vec<Pt<2>>)> {
     edges
@@ -85,9 +84,12 @@ fn next_nodes(
         .iter()
         .enumerate()
         .filter_map(|(i, n)| {
-            if n.is_none() {
-                None
-            } else if distances.contains_key(&(*n.clone().unwrap().last().unwrap(), i)) {
+            if n.is_none()
+                || (distances.is_some()
+                    && distances
+                        .unwrap()
+                        .contains_key(&(*n.clone().unwrap().last().unwrap(), i)))
+            {
                 None
             } else {
                 let steps = n.clone().unwrap().clone();
@@ -108,7 +110,7 @@ fn distances(start: &Pt<2>, edges: &Edges) -> HashMap<(Pt<2>, usize), usize> {
     let mut distances = HashMap::new();
     distances.insert((*start, 0), 0);
 
-    let mut frontier = next_nodes(start, 0, edges, &distances, 0);
+    let mut frontier = next_nodes(start, 0, edges, Some(&distances), 0);
 
     while !frontier.is_empty() {
         frontier.sort_by(|(a, _, _), (b, _, _)| b.cmp(a));
@@ -125,12 +127,49 @@ fn distances(start: &Pt<2>, edges: &Edges) -> HashMap<(Pt<2>, usize), usize> {
             steps.last().unwrap(),
             bearing,
             edges,
-            &distances,
+            Some(&distances),
             cost,
         ));
     }
 
-    return distances;
+    distances
+}
+
+fn dfs(
+    (score, bearing, mut next): (usize, usize, Vec<Pt<2>>),
+    max_score: usize,
+    target: &Pt<2>,
+    edges: &Edges,
+    cached: &mut HashMap<(Pt<2>, usize, usize), Vec<Pt<2>>>,
+) -> Option<Vec<Pt<2>>> {
+    let pt = *next.last().unwrap();
+    if let Some(res) = cached.get(&(pt, bearing, score)) {
+        println!("hit");
+        return Some(res.to_vec());
+    }
+
+    if score > max_score {
+        return None;
+    }
+
+    if &pt == target {
+        return Some(next);
+    }
+
+    let mut sub = next_nodes(&pt, bearing, edges, None, score)
+        .into_iter()
+        .filter_map(|n| dfs(n, max_score, target, edges, cached))
+        .flatten()
+        .collect_vec();
+
+    if sub.is_empty() {
+        //cached.insert((pt,bearing), vec![]);
+        None
+    } else {
+        sub.append(&mut next);
+        cached.insert((pt, bearing, score), sub.clone());
+        Some(sub)
+    }
 }
 
 impl SolutionSimultaneous<State, usize, usize> for Day16Solution {
@@ -164,7 +203,16 @@ impl SolutionSimultaneous<State, usize, usize> for Day16Solution {
                 p1 = p1.min(*v);
             }
         }
-        Ok((p1, 0))
+
+        let visited = dfs(
+            (0, 0, vec![input.start]),
+            p1,
+            &input.end,
+            &input.edges,
+            &mut HashMap::new(),
+        )
+        .unwrap();
+        Ok((p1, visited.into_iter().unique().count()))
     }
 }
 
