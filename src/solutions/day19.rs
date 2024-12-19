@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::utils::solver_types::{solve_simultaneous, SolutionSimultaneous};
 use anyhow::Result;
 
@@ -8,39 +10,49 @@ pub fn day19(input: &str) -> Result<f32> {
 }
 
 struct Towels {
-    available: Vec<Vec<u8>>,
-    patterns: Vec<Vec<u8>>,
+    available: Vec<Vec<char>>,
+    patterns: Vec<Vec<char>>,
 }
 
-fn to_code(c: char) -> u8 {
-    match c {
-        'w' => 0,
-        'u' => 1,
-        'b' => 2,
-        'r' => 3,
-        'g' => 4,
-        c => panic!("Unrecognised color '{}'", c),
-    }
-}
+// fn to_code(c: char) -> u8 {
+//     match c {
+//         'w' => 0,
+//         'u' => 1,
+//         'b' => 2,
+//         'r' => 3,
+//         'g' => 4,
+//         c => panic!("Unrecognised color '{}'", c),
+//     }
+// }
 
-fn valid(available: &Vec<Vec<u8>>, pattern: &Vec<u8>, idx: usize) -> Option<usize> {
-    if idx == pattern.len() {
+fn valid(
+    available: &Vec<Vec<char>>,
+    cache: &mut HashMap<Vec<char>, usize>,
+    pattern: &Vec<char>,
+) -> Option<usize> {
+    if pattern.is_empty() {
         return Some(1);
     }
+    let subs = if let Some(v) = cache.get(pattern) {
+        *v
+    } else {
+        let s = available
+            .iter()
+            .filter(|a| {
+                if a.len() > pattern.len() {
+                    false
+                } else {
+                    let cmp = &pattern[0..a.len()];
 
-    let subs = available
-        .iter()
-        .filter(|a| {
-            if a.len() + idx > pattern.len() {
-                false
-            } else {
-                let cmp = &pattern[idx..idx + a.len()];
+                    cmp == *a
+                }
+            })
+            .filter_map(|v| valid(available, cache, &pattern[v.len()..].to_vec()))
+            .sum();
 
-                cmp == *a
-            }
-        })
-        .filter_map(|v| valid(available, pattern, idx + v.len()))
-        .sum();
+        cache.insert(pattern.to_vec(), s);
+        s
+    };
 
     if subs == 0 {
         None
@@ -52,14 +64,8 @@ fn valid(available: &Vec<Vec<u8>>, pattern: &Vec<u8>, idx: usize) -> Option<usiz
 impl SolutionSimultaneous<Towels, usize, usize> for Day19Solution {
     fn load(input: &str) -> Result<Towels> {
         let (a, p) = input.split_once("\n\n").unwrap();
-        let available = a
-            .split(", ")
-            .map(|t| t.chars().map(to_code).collect())
-            .collect();
-        let patterns = p
-            .lines()
-            .map(|l| l.chars().map(to_code).collect())
-            .collect();
+        let available = a.split(", ").map(|t| t.chars().collect()).collect();
+        let patterns = p.lines().map(|l| l.chars().collect()).collect();
 
         Ok(Towels {
             available,
@@ -68,12 +74,12 @@ impl SolutionSimultaneous<Towels, usize, usize> for Day19Solution {
     }
 
     fn solve(input: Towels) -> Result<(usize, usize)> {
+        let mut cache = HashMap::new();
         let perms: Vec<usize> = input
             .patterns
             .iter()
-            .filter_map(|p| valid(&input.available, &p, 0))
+            .filter_map(|p| valid(&input.available, &mut cache, p))
             .collect();
-
         Ok((perms.len(), perms.iter().sum()))
     }
 }
@@ -81,7 +87,7 @@ impl SolutionSimultaneous<Towels, usize, usize> for Day19Solution {
 #[cfg(test)]
 mod tests {
     use super::Day19Solution;
-    use crate::utils::solver_types::{SolutionLinear, SolutionSimultaneous};
+    use crate::utils::solver_types::SolutionSimultaneous;
     use rstest::rstest;
 
     #[rstest]
