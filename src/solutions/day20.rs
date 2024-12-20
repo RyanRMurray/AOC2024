@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    hash::Hash, ops::Mul,
-};
+use std::collections::{HashMap, HashSet};
 
 use crate::utils::{
     point::Pt,
@@ -19,6 +16,7 @@ pub fn day20(input: &str) -> Result<f32> {
 type Maze = HashSet<Pt<2>>;
 type Distances = HashMap<Pt<2>, usize>;
 type Input = (Distances, Pt<2>, Pt<2>);
+type Cheat = (Pt<2>, Pt<2>, usize);
 /// NESW
 const DIRS: [Pt<2>; 4] = [Pt([0, -1]), Pt([1, 0]), Pt([0, 1]), Pt([-1, 0])];
 
@@ -32,7 +30,6 @@ fn nexts<'a>(m: &'a Maze, pt: &'a Pt<2>, cost: usize) -> impl Iterator<Item = (P
         }
     })
 }
-
 
 fn to_distances(m: &Maze, e: &Pt<2>) -> Distances {
     let mut visited = HashMap::new();
@@ -60,49 +57,36 @@ fn to_distances(m: &Maze, e: &Pt<2>) -> Distances {
     visited
 }
 
+fn cheatable_n(d: &Distances, at: &Pt<2>, dist: isize) -> Vec<Cheat> {
+    (-dist..=dist)
+        .cartesian_product(-dist..=dist)
+        .filter_map(|(x, y)| {
+            let neighbour = at + &Pt([x, y]);
+            let distance = x.abs() + y.abs();
 
-fn cheatable_n(d: &Distances, at: &Pt<2>, dist: isize) -> Vec<(Pt<2>, usize)>{
-    (-dist..=dist).cartesian_product(-dist..=dist)
-    .filter_map(|(x,y)|{
-        let neighbour = at + &Pt([x,y]);
-        let distance = x.abs()+y.abs();
-
-        if distance > dist || !d.contains_key(&neighbour){
-            None
-        } else {
-            Some((neighbour,distance as usize))
-        }
-    }).collect_vec()
-}
-
-/// points reachable with a cheat
-fn cheatable(d: &Distances, at: &Pt<2>) -> Vec<(Pt<2>, Pt<2>)>{
-    DIRS.iter()
-    .filter_map(|off|{
-        let target = at + &off.mul(2);
-        if d.contains_key(&target){
-            Some((*at,target))
-        } else {
-            None
-        }
-    }).collect_vec()
-}
-
-/// points reachable with 20 ps worth of cheating
-fn big_cheatable(d: &Distances, at: &Pt<2>) -> Vec<(Pt<2>,Pt<2>)>{
-    todo!()
+            if distance > dist || !d.contains_key(&neighbour) {
+                None
+            } else {
+                Some((*at, neighbour, distance as usize))
+            }
+        })
+        .collect_vec()
 }
 
 /// how many seconds do we save if we cheat from `start` to `end`
-fn faster_by(d: &Distances, fastest_time: usize, cheat_start: &Pt<2>, cheat_end: &Pt<2>) -> Option<usize>{
+fn faster_by(
+    d: &Distances,
+    fastest_time: usize,
+    (cheat_start, cheat_end, cheat_distance): &Cheat,
+) -> Option<usize> {
     let cheated_time = d.get(cheat_end).unwrap();
     let uncheated_time = d.get(cheat_start).unwrap();
 
-    if (cheated_time+2) >= *uncheated_time{
+    if (cheated_time + cheat_distance) >= *uncheated_time {
         return None;
     }
-    
-    Some(fastest_time - (cheated_time+2+(fastest_time-uncheated_time)))
+
+    Some(fastest_time - (cheated_time + cheat_distance + (fastest_time - uncheated_time)))
 }
 
 impl SolutionLinear<Input, usize, usize> for Day20Solution {
@@ -129,32 +113,40 @@ impl SolutionLinear<Input, usize, usize> for Day20Solution {
         Ok((d, s, e))
     }
 
-    fn part1((distances, start, end): &mut Input) -> Result<usize> {
+    fn part1((distances, start, _end): &mut Input) -> Result<usize> {
         let is_test = distances.len() < 225;
 
-        let fastest_time = *distances.get(&start).unwrap();
+        let fastest_time = *distances.get(start).unwrap();
 
-        let cheats = distances.keys().flat_map(|p| cheatable(&distances, p)).filter_map(|(cheat_start, cheat_end)| faster_by(&distances, fastest_time, &cheat_start, &cheat_end)).collect_vec();
+        let cheats = distances
+            .keys()
+            .flat_map(|p| cheatable_n(distances, p, 2))
+            .filter_map(|cheat| faster_by(distances, fastest_time, &cheat))
+            .collect_vec();
 
-        if is_test{
+        if is_test {
             Ok(cheats.len())
-        } else{
+        } else {
             Ok(cheats.iter().filter(|v| **v >= 100).count())
         }
     }
 
-    fn part2((distances, start, end): &mut Input, _part_1_solution: usize) -> Result<usize> {
+    fn part2((distances, start, _end): &mut Input, _part_1_solution: usize) -> Result<usize> {
         let is_test = distances.len() < 225;
-        todo!()
-        // let fastest_time = *distances.get(&start).unwrap();
 
-        // let cheats = distances.keys().flat_map(|p| cheatable(&distances, p)).filter_map(|(cheat_start, cheat_end)| faster_by(&distances, fastest_time, &cheat_start, &cheat_end)).collect_vec();
+        let fastest_time = *distances.get(start).unwrap();
 
-        // if is_test{
-        //     Ok(cheats.iter().filter(|v| **v >= 50).count())
-        // } else{
-        //     Ok(cheats.iter().filter(|v| **v >= 100).count())
-        // }
+        let cheats = distances
+            .keys()
+            .flat_map(|p| cheatable_n(distances, p, 20))
+            .filter_map(|cheat| faster_by(distances, fastest_time, &cheat))
+            .collect_vec();
+
+        if is_test {
+            Ok(cheats.len())
+        } else {
+            Ok(cheats.iter().filter(|v| **v >= 100).count())
+        }
     }
 }
 
@@ -182,7 +174,7 @@ mod tests {
 #...#...#...###
 ###############",
         44,
-        2
+        3081
     )]
     fn validate_day20(#[case] input: &str, #[case] expected_1: usize, #[case] expected_2: usize) {
         let mut input = Day20Solution::load(input).unwrap();
